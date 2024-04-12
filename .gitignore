@@ -1,0 +1,9 @@
+# IDE fluff
+.idea
+.vscode
+
+# macOS fluff
+.DS_Store
+
+# Target JSON file
+*.json
