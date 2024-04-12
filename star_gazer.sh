@@ -10,7 +10,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Get the last page number from the "Link" header
 function get_last_page_number() {
-  local link
+  local url
   local status
   local total_pages
 
@@ -19,28 +19,29 @@ function get_last_page_number() {
     value=${value##+([[:space:]])}; value=${value%%+([[:space:]])}
 
     case "$key" in
-        link) link="$value"
+        link) url="$value"
                 ;;
         HTTP*) read -r _ status _ <<< "$key{$value:+:$value}"
                 ;;
      esac
   done < <(curl -sI "$API_URL")
-echo "API response status: $status!"
+#  echo "API response status: $status!"
 
-total_pages=$(
-  echo "$link" \
-    | cut -d ' ' -f 3 \
-    | sed -n 's/.*page=\([0-9]*\).*/\1/p'
-    )
-echo "Found $total_pages pages of starred repos for user: $USER."
+  total_pages=$(
+    echo "$url" \
+      | cut -d ' ' -f 3 \
+      | sed -n 's/.*page=\([0-9]*\).*/\1/p'
+      )
+  echo "$total_pages"
 }
 
 # Collect user's starred repos data
 function collect_user_data() {
-  local page_number
-  echo "Collecting starred repos data..."
-  for page_number in $(seq 1 "$1"); do
-      echo "Fetching page $page_number/$1..."
+  local total_pages
+  total_pages=$(get_last_page_number)
+  echo "Collecting starred repos data for ${USER}..."
+  for page_number in $(seq 1 "$total_pages"); do
+      echo "Fetching page $page_number/$total_pages..."
       curl -s "$API_URL"\&page="$page_number" | \
         jq -r '
         . | .[]
@@ -63,9 +64,9 @@ function collect_user_data() {
 
   # We need to merge all the JSON files into one and remove the individual files
   jq --slurp 'map(.)' "$SCRIPT_DIR"/*.json > "$STARRED"
-  rm "$SCRIPT_DIR"/"${0%.sh}"_*.json
+  rm "${0%.sh}"_*.json
 
-   echo "Data collection completed!"
+  echo "Data collection completed!"
 }
 
 # Select a random repo from the user's starred repos from the JSON file
@@ -90,14 +91,10 @@ function main() {
   if [ -f "$STARRED" ]; then
     echo "Found existing starred repos data for user: $USER."
     selector
-    exit 0
+  else
+    collect_user_data
+    selector
   fi
-
-  total_pages=$(get_last_page_number)
-  collect_user_data "$total_pages"
-
-  selector
-
 }
 
 main
