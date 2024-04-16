@@ -36,10 +36,8 @@ function get_last_page_number() {
 function collect_user_data() {
   local total_pages
   total_pages=$(get_last_page_number)
-  echo "Collecting starred repos data for ${USER}..."
+  echo "Collecting starred repos for user: ${USER}"
 
-  # Adapt the script to use it with docker volumes
-  mkdir ./data && cd ./data
   for page_number in $(seq 1 "$total_pages"); do
       echo "Fetching page $page_number/$total_pages..."
       curl -s "$API_URL"\&page="$page_number" | \
@@ -61,19 +59,17 @@ function collect_user_data() {
             }'  \
         >> "${0%.sh}_$page_number.json"
   done
-
+  # Debug feature
+  pwd
   # We need to merge all the JSON files into one and remove the individual files
   # We also need to persist the data for docker container restarts
-  jq --slurp 'map(.)' ./*.json > "$STARRED"
+  mkdir -p ./data
+  jq --slurp 'map(.)' ./*.json > "./data/$STARRED"
 
   # Remove the individual JSON files
   rm "${0%.sh}"_*.json
 
   echo "Data collection completed!"
-
-  # Let's see where we are and return to the script directory
-  pwd
-  cd "$SCRIPT_DIR"
 }
 
 # Select a random repo from the user's starred repos from the JSON file
@@ -95,7 +91,6 @@ function main() {
 
   # Enable extended pattern matching
   shopt -s extglob
-  local total_pages
 
   # Check if the JSON file is already present
   if [ -f "./data/$STARRED" ]; then
