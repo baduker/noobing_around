@@ -12,6 +12,29 @@ To run the script, use the following command:
 ./star_gazer.sh
 ```
 
+Or use Docker with a volume mount.
+
+First, build the Docker image:
+
+```bash
+docker build -t star_gazer .
+```
+
+Then run the Docker container with `data` as the volume mount point:
+
+```bash
+docker run -it \
+  --name star-gazer \
+  --mount source=data,target=/data \
+  star-gazer
+```
+
+To restart it and reuse the volume mount point:
+
+```bash
+docker start -i star-gazer
+```
+
 ## How it works
 - The script first checks if the JSON file containing the starred repositories 
 data already exists. If it does, it proceeds to the selection step. If it 
