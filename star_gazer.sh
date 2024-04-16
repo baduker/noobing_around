@@ -6,8 +6,6 @@ readonly USER="baduker"
 readonly STARRED="${USER}_stars.json"
 readonly API_URL="https://api.github.com/users/$USER/starred?per_page=100"
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
 # Get the last page number from the "Link" header
 function get_last_page_number() {
   local url
@@ -41,7 +39,7 @@ function collect_user_data() {
   echo "Collecting starred repos data for ${USER}..."
 
   # Adapt the script to use it with docker volumes
-  mkdir -p "$SCRIPT_DIR"/data && cd "$SCRIPT_DIR"/data
+  mkdir ./data && cd ./data
   for page_number in $(seq 1 "$total_pages"); do
       echo "Fetching page $page_number/$total_pages..."
       curl -s "$API_URL"\&page="$page_number" | \
@@ -83,12 +81,12 @@ function selector() {
   local selected
   selected=$(
     jq -r --arg repo \
-    $(shuf -n1 -e $(jq -r '.[].repo_name' < "${SCRIPT_DIR}/data/$STARRED")) \
+    $(shuf -n1 -e $(jq -r '.[].repo_name' < "./data/$STARRED")) \
     '.[] |
     {
       statusCode: 200,
       random_repo: select(.repo_name == $repo)
-    }' < "${SCRIPT_DIR}/data/$STARRED")
+    }' < "./data/$STARRED")
   echo "$selected"
 }
 
@@ -100,7 +98,7 @@ function main() {
   local total_pages
 
   # Check if the JSON file is already present
-  if [ -f "${SCRIPT_DIR}/data/$STARRED" ]; then
+  if [ -f "./data/$STARRED" ]; then
     echo "Found existing starred repos data for user: $USER."
     selector
   else
