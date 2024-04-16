@@ -25,7 +25,6 @@ function get_last_page_number() {
                 ;;
      esac
   done < <(curl -sI "$API_URL")
-#  echo "API response status: $status!"
 
   total_pages=$(
     echo "$url" \
@@ -40,6 +39,9 @@ function collect_user_data() {
   local total_pages
   total_pages=$(get_last_page_number)
   echo "Collecting starred repos data for ${USER}..."
+
+  # Adapt the script to use it with docker volumes
+  mkdir -p "$SCRIPT_DIR"/data && cd "$SCRIPT_DIR"/data
   for page_number in $(seq 1 "$total_pages"); do
       echo "Fetching page $page_number/$total_pages..."
       curl -s "$API_URL"\&page="$page_number" | \
@@ -63,32 +65,42 @@ function collect_user_data() {
   done
 
   # We need to merge all the JSON files into one and remove the individual files
-  jq --slurp 'map(.)' "$SCRIPT_DIR"/*.json > "$STARRED"
+  # We also need to persist the data for docker container restarts
+  jq --slurp 'map(.)' ./*.json > "$STARRED"
+
+  # Remove the individual JSON files
   rm "${0%.sh}"_*.json
 
   echo "Data collection completed!"
+
+  # Let's see where we are and return to the script directory
+  pwd
+  cd "$SCRIPT_DIR"
 }
 
 # Select a random repo from the user's starred repos from the JSON file
 function selector() {
   local selected
-  selected=$(jq -r --arg repo $(shuf -n1 -e $(jq -r '.[].repo_name' < "$STARRED")) \
-  '.[] |
-  {
-    statusCode: 200,
-    random_repo: select(.repo_name == $repo)
-  }' < "$STARRED")
+  selected=$(
+    jq -r --arg repo \
+    $(shuf -n1 -e $(jq -r '.[].repo_name' < "${SCRIPT_DIR}/data/$STARRED")) \
+    '.[] |
+    {
+      statusCode: 200,
+      random_repo: select(.repo_name == $repo)
+    }' < "${SCRIPT_DIR}/data/$STARRED")
   echo "$selected"
 }
 
 # Main function
 function main() {
+
   # Enable extended pattern matching
   shopt -s extglob
   local total_pages
 
   # Check if the JSON file is already present
-  if [ -f "$STARRED" ]; then
+  if [ -f "${SCRIPT_DIR}/data/$STARRED" ]; then
     echo "Found existing starred repos data for user: $USER."
     selector
   else
