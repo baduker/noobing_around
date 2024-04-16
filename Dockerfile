@@ -5,8 +5,7 @@ RUN apk add --no-cache \
     curl \
     jq
 
-WORKDIR /star_gazer
 COPY star_gazer.sh .
 RUN chmod +x star_gazer.sh
 
-ENTRYPOINT ["/star_gazer/star_gazer.sh"]
+ENTRYPOINT ["./star_gazer.sh"]
