@@ -5,18 +5,14 @@ set -e -o pipefail
 # Get the last page number from the "Link" header
 function get_last_page_number() {
   local url
-  local status
   local total_pages
 
   while IFS=':' read -r key value; do
-    local skip_value
     # trim whitespace in "value"
     value=${value##+([[:space:]])}; value=${value%%+([[:space:]])}
 
     case "$key" in
         link) url="$value"
-                ;;
-        HTTP*) read -r skip_value status skip_value <<< "$key{$value:+:$value}"
                 ;;
      esac
   done < <(curl -sI "$API_URL")
