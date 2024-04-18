@@ -1,10 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -e -o pipefail
-
-readonly USER="baduker"
-readonly STARRED="${USER}_stars.json"
-readonly API_URL="https://api.github.com/users/$USER/starred?per_page=100"
 
 # Get the last page number from the "Link" header
 function get_last_page_number() {
@@ -35,6 +31,8 @@ function get_last_page_number() {
 # Collect user's starred repos data
 function collect_user_data() {
   local total_pages
+  local page_number
+
   total_pages=$(get_last_page_number)
   echo "Collecting starred repos for user: ${USER}"
 
@@ -59,8 +57,7 @@ function collect_user_data() {
             }'  \
         >> "${0%.sh}_$page_number.json"
   done
-  # Debug feature
-  pwd
+
   # We need to merge all the JSON files into one and remove the individual files
   # We also need to persist the data for docker container restarts
   mkdir -p ./data
@@ -86,20 +83,51 @@ function selector() {
   echo "$selected"
 }
 
+# Usage function
+usage() {
+  echo "Usage: $0 [-u <username>]"
+  echo " -u <username>  Specify the GitHub username to fetch starred repos from."
+  exit 1
+}
+
 # Main function
 function main() {
 
   # Enable extended pattern matching
   shopt -s extglob
 
+  # Parse command line arguments
+  while getopts ":u:" opt; do
+    case $opt in
+      u)
+          USER="$OPTARG"
+          STARRED="${USER}_stars.json"
+          API_URL="https://api.github.com/users/$USER/starred?per_page=100"
+        ;;
+      *)
+        usage
+        ;;
+    esac
+  done
+
+  shift $((OPTIND - 1))
+
+  # User input validation; can't be empty
+  if [[ -z "$USER" ]]; then
+    echo "Username cannot be empty."
+    usage
+  fi
+
   # Check if the JSON file is already present
   if [ -f "./data/$STARRED" ]; then
     echo "Found existing starred repos data for user: $USER."
     selector
+    exit 0
   else
     collect_user_data
     selector
+    exit 0
   fi
 }
 
-main
+main "$@"
