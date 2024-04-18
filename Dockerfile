@@ -9,3 +9,4 @@ COPY star_gazer.sh .
 RUN chmod +x star_gazer.sh
 
 ENTRYPOINT ["./star_gazer.sh"]
+CMD ["-u", "baduker"]
