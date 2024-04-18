@@ -9,13 +9,14 @@ function get_last_page_number() {
   local total_pages
 
   while IFS=':' read -r key value; do
+    local skip_value
     # trim whitespace in "value"
     value=${value##+([[:space:]])}; value=${value%%+([[:space:]])}
 
     case "$key" in
         link) url="$value"
                 ;;
-        HTTP*) read -r _ status _ <<< "$key{$value:+:$value}"
+        HTTP*) read -r skip_value status skip_value <<< "$key{$value:+:$value}"
                 ;;
      esac
   done < <(curl -sI "$API_URL")
@@ -74,7 +75,7 @@ function selector() {
   local selected
   selected=$(
     jq -r --arg repo \
-    $(shuf -n1 -e $(jq -r '.[].repo_name' < "./data/$STARRED")) \
+    "$(shuf -n1 -e $(jq -r '.[].repo_name' < "./data/$STARRED"))" \
     '.[] |
     {
       statusCode: 200,
