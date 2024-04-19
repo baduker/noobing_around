@@ -4,12 +4,16 @@ on:
         branches:
         - main
         paths-ignore:
-          - 'README.md'
+          - ./README.md
+          - ./Makefile
+          - ./LICENSE
     pull_request:
         branches:
         - main
         paths-ignore:
-          - 'README.md'
+          - ./README.md
+          - ./Makefile
+          - ./LICENSE
 
 jobs:
   shellcheck:
