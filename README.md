@@ -2,7 +2,22 @@
 
 Star Gazer is a bash script that fetches and stores the data of the repositories
 starred by a GitHub user. It then selects a random repository from the stored 
-data.
+data. That's it (for now). :-]
+
+This is a low effort script I wrote to play around with the GitHub API, bash,
+docker, and some GitHub actions.
+
+It's rather limited in functionality. I might add more features later.
+
+## How it works
+- The script first checks if the JSON file containing the starred repositories 
+data already exists. If it does, it proceeds to the selection step. If it 
+doesn't, it collects the data first.  
+- The data collection step involves sending requests to the GitHub API to fetch 
+the data of the repositories starred by the user. The data is then stored in a 
+JSON file.  
+- The selection step involves picking a random repository from the stored data 
+and printing its details.
 
 The output is in a JSON format and includes the following details:
 
@@ -25,9 +40,9 @@ The output is in a JSON format and includes the following details:
 }
 ```
 The reason it's a JSON and not a simple string is because I used this script
-in a AWS Lambda function and it was easier to parse the output.
+in an AWS Lambda function, and it was easier to parse the output.
 
-I'll ad a flag to output the data in a simple string format later.
+I'll add a flag to output the data in a simple string format later.
 
 ```
 ## Usage
@@ -60,13 +75,3 @@ To restart it and reuse the volume mount point:
 ```bash
 docker start -i star-gazer
 ```
-
-## How it works
-- The script first checks if the JSON file containing the starred repositories 
-data already exists. If it does, it proceeds to the selection step. If it 
-doesn't, it collects the data first.  
-- The data collection step involves sending requests to the GitHub API to fetch 
-the data of the repositories starred by the user. The data is then stored in a 
-JSON file.  
-- The selection step involves picking a random repository from the stored data 
-and printing its details.
